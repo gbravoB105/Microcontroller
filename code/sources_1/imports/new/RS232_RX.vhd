@@ -92,15 +92,20 @@ Outputs: process (CurrentState, DataCount, FlagHalfBit, LineRD_in)
                 Code_out  <= '0';
                 Store_out <= '0';
             when StartBit =>
-                null;
+                Valid_out <= '0';
+                Code_out  <= '0';
+                Store_out <= '0';
             when RcvData =>
                 if (FlagHalfBit = '1') then
                     Valid_out <= '1';
                     Code_out <= LineRD_in;
                 else
                     Valid_out <= '0';
+                    Code_out  <= '0';
                 end if;
+                Store_out <= '0';
             when StopBit =>
+                Valid_out <= '0';
                 Code_out  <= '0';
                 if (FlagHalfBit = '1' and LineRD_in = '1') then 
                     Store_out <= '1';

@@ -179,7 +179,7 @@ Outputs: process (Clk, currentstate)
                 OE <= '0';
                 Write_en <= 'Z';
                 Address <= dma_tx_buffer_msb;
-                --Databus <= (others => 'Z');
+                Databus <= (others => 'Z');
                 
                 DMA_RQ <= '0';
                 READY  <= '0';
@@ -191,8 +191,8 @@ Outputs: process (Clk, currentstate)
             when envio1 =>
                 OE <= '0';
                 Write_en <= 'Z';
-                --Address <= (others => 'Z');
-                --Databus <= (others => 'Z');
+                Address <= dma_tx_buffer_msb;
+                Databus <= (others => 'Z');
                 
                 DMA_RQ <= '0';
                 READY  <= '0';
@@ -205,7 +205,7 @@ Outputs: process (Clk, currentstate)
                 OE <= '0';                  
                 Write_en <= 'Z';            
                 Address <= dma_tx_buffer_lsb;
-                --Databus <= (others => 'Z'); 
+                Databus <= (others => 'Z'); 
                                             
                 DMA_RQ <= '0';              
                 READY  <= '0';              
@@ -217,8 +217,8 @@ Outputs: process (Clk, currentstate)
             when envio2 =>
                 OE <= '0';
                 Write_en <= 'Z';
-                --Address <= (others => 'Z');
-                --Databus <= (others => 'Z');
+                Address <= dma_tx_buffer_lsb;
+                Databus <= (others => 'Z');
                 
                 DMA_RQ <= '0';
                 READY  <= '0';

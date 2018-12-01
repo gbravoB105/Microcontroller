@@ -73,7 +73,6 @@ Next_process: process (clk, currentstate)
     begin
         case CurrentState is
             when Idle =>
-           
                 if(dma_rq = '1') then
                     NextState <= dar_buses;
                 elsif(dma_rq='0') then
@@ -161,15 +160,16 @@ FFs: process (Reset, Clk, NextState, CurrentState)
 
 Outputs: process (Clk) 
     begin
-        if (clk'event and clk = '1') then 
+        if (Reset = '0') then
+            Cuenta_Instruccion <= (others => '1');
+        elsif (clk'event and clk = '1') then 
             case CurrentState is
                 when Idle =>
                 
                 
                                 
-                if (Reset = '0') then
-                        Cuenta_Instruccion <= (others => '1');
-                elsif(dma_rq = '0') then
+                
+                if(dma_rq = '0') then
                     if(flag_salto = '1') then
                         Cuenta_Instruccion <= unsigned(registro_segunda);
                     else
