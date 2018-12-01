@@ -44,7 +44,8 @@ entity MAIN_CONTROL is
            FlagZ     : in STD_LOGIC;
            FlagC     : in STD_LOGIC;
            FlagN     : in STD_LOGIC;
-           FlagE     : in STD_LOGIC);
+           FlagE     : in STD_LOGIC;
+           CuentInst : out std_logic_vector(11 downto 0));
 end MAIN_CONTROL;
 
 architecture Behavioral of MAIN_CONTROL is
@@ -65,10 +66,14 @@ architecture Behavioral of MAIN_CONTROL is
 
 begin
 
+--To monitorize Cuenta Instruccion
+CuentInst <= std_logic_vector(Cuenta_Instruccion);
+
 Next_process: process (clk, currentstate) 
     begin
         case CurrentState is
             when Idle =>
+           
                 if(dma_rq = '1') then
                     NextState <= dar_buses;
                 elsif(dma_rq='0') then
@@ -159,6 +164,19 @@ Outputs: process (Clk)
         if (clk'event and clk = '1') then 
             case CurrentState is
                 when Idle =>
+                
+                
+                                
+                if (Reset = '0') then
+                        Cuenta_Instruccion <= (others => '1');
+                elsif(dma_rq = '0') then
+                    if(flag_salto = '1') then
+                        Cuenta_Instruccion <= unsigned(registro_segunda);
+                    else
+                        Cuenta_Instruccion <= Cuenta_Instruccion + to_unsigned(1,12);
+                    end if;                
+                end if;
+                
                     registro_segunda <= (others => '0');
                     
                     Databus <= (others => 'Z');
@@ -219,6 +237,13 @@ Outputs: process (Clk)
                     end if;
                     
                 when decode =>
+                
+                    if( type_instruccion = type_2) then
+                        Cuenta_Instruccion <= Cuenta_Instruccion + to_unsigned(1,12);
+                    elsif (flag_mov_registros = '0' and type_instruccion = type_3) then
+                        Cuenta_Instruccion <= Cuenta_Instruccion + to_unsigned(1,12);
+                    end if;
+                
                     Databus <= (others => 'Z');
                     --Rom_Addr <= 
                     Ram_Addr <= (others => 'Z');
@@ -441,21 +466,23 @@ Outputs: process (Clk)
         end if;
     end process;
     
-CounterInstrucciones : process(Reset, CurrentState, flag_salto) 
-    begin
-        if (Reset = '0') then
-            Cuenta_Instruccion <= (others => '1');
-        elsif (Currentstate = idle and dma_rq = '0') then
-            if(flag_salto = '1') then
-                Cuenta_Instruccion <= unsigned(registro_segunda);
-            else
-                Cuenta_Instruccion <= Cuenta_Instruccion + to_unsigned(1,12);
-            end if;
-        elsif (Currentstate = Decode and type_instruccion = type_2) then
-            Cuenta_Instruccion <= Cuenta_Instruccion + to_unsigned(1,12);
-        elsif (Currentstate = Decode and flag_mov_registros = '0' and type_instruccion = type_3) then
-            Cuenta_Instruccion <= Cuenta_Instruccion + to_unsigned(1,12);
-        end if;    
-    end process;
+--CounterInstrucciones : process(Reset, CurrentState, clk) 
+--    begin
+--        if (Reset = '0') then
+--            Cuenta_Instruccion <= (others => '1');
+--        elsif(clk'event and clk = '0') then
+--            elsif (Currentstate = idle and dma_rq = '0') then
+--                if(flag_salto = '1') then
+--                    Cuenta_Instruccion <= unsigned(registro_segunda);
+--                else
+--                    Cuenta_Instruccion <= Cuenta_Instruccion + to_unsigned(1,12);
+--                end if;
+--            elsif (Currentstate = Decode and type_instruccion = type_2) then
+--                Cuenta_Instruccion <= Cuenta_Instruccion + to_unsigned(1,12);
+--            elsif (Currentstate = Decode and flag_mov_registros = '0' and type_instruccion = type_3) then
+--                Cuenta_Instruccion <= Cuenta_Instruccion + to_unsigned(1,12);
+ 
+--        end if;    
+--    end process;
 
 end Behavioral;
