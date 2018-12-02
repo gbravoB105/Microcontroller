@@ -34,6 +34,9 @@ entity ALU is
            FlagN       : out std_logic; -- Nibble carry bit
            FlagE       : out std_logic; -- Error flag
            Index_Reg   : out std_logic_vector(7 downto 0);   -- Index register
+           A_sal       : out std_logic_vector(7 downto 0);
+           B_sal       : out std_logic_vector(7 downto 0);
+           ACC_sal         : out std_logic_vector(7 downto 0);
            Databus     : inout std_logic_vector(7 downto 0)); -- System Data bus
 end ALU;
 
@@ -42,6 +45,11 @@ architecture Behavioral of ALU is
     signal A, B, ACC, Index : unsigned(7 downto 0);  
       
 begin
+
+A_sal <= std_logic_vector(A);
+B_sal <= std_logic_vector(B);
+ACC_sal <= std_logic_vector(ACC);
+
 
 Index_reg <= std_logic_vector(Index);
 

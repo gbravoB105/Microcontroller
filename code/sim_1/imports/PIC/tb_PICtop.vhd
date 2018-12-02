@@ -19,6 +19,9 @@ architecture TestBench of tb_PICtop is
       switches  : out std_logic_vector(7 downto 0);
       Temp      : out std_logic_vector(7 downto 0);
       CuentInst : out std_logic_vector(11 downto 0);
+      A_sal       : out std_logic_vector(7 downto 0);
+                 B_sal       : out std_logic_vector(7 downto 0);
+                 ACC_sal         : out std_logic_vector(7 downto 0);
       Disp      : out std_logic_vector(1 downto 0));
   end component;
 
@@ -34,6 +37,9 @@ architecture TestBench of tb_PICtop is
   signal Temp      : std_logic_vector(7 downto 0);
   signal Disp      : std_logic_vector(1 downto 0);
   signal CuentInst : std_logic_vector(11 downto 0);
+  signal A_sal       :  std_logic_vector(7 downto 0);
+     signal        B_sal       :  std_logic_vector(7 downto 0);
+      signal       ACC_sal         :  std_logic_vector(7 downto 0);
 begin  -- TestBench
 
   UUT: PICtop
@@ -44,6 +50,9 @@ begin  -- TestBench
         RS232_TX  => RS232_TX,
         switches  => switches,
         CuentInst => CuentInst,
+              ACC_sal     => ACC_sal,
+        B_sal       => B_sal,
+        A_sal       => A_sal,
         Temp      => Temp,
         Disp      => Disp);
 

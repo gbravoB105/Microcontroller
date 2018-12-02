@@ -188,6 +188,8 @@ Outputs: process (Clk)
                     Send_Comm <= '0';
                     ALU_OP <= nop;
                     
+                    flagZretenido <= '0';
+
                 when dar_buses =>
                     Databus <= (others => 'Z');
                     --Rom_Addr <= 
@@ -329,7 +331,7 @@ Outputs: process (Clk)
                         end if;
                     end if;
                     
-                    flagZretenido <= '0';
+                    --flagZretenido <= '0';
                     
                 when Execute3 =>
                     Databus <= (others => 'Z');
