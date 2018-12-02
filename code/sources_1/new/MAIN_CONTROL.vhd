@@ -51,7 +51,7 @@ end MAIN_CONTROL;
 architecture Behavioral of MAIN_CONTROL is
 
     type State is (Idle, Dar_Buses, Fetch1, Fetch2, Decode, Execute1, Execute2, LecturaSalto, 
-        DecisionSalto, Execute3, LecturaSegundaPalabra, Espera_LSP, EscribirEnRam, Execute4, Stall);
+        DecisionSalto, Execute3, LecturaSegundaPalabra, Espera_LSP, EscribirEnRam, Execute4, Stall, idle_desp_darbuses);
     
     signal CurrentState, NextState       : State;
     signal type_instruccion              : std_logic_vector (1 downto 0) := "00";
@@ -63,6 +63,8 @@ architecture Behavioral of MAIN_CONTROL is
     
     signal flagZretenido                 : std_logic := '0';
     signal EsperaStall                   : unsigned(2 downto 0);
+    
+    signal flagzretenido2                : std_logic := '0';
 
 begin
 
@@ -82,10 +84,12 @@ Next_process: process (clk, currentstate)
                 end if;
             when dar_buses =>
                 if(dma_rq = '0') then
-                    NextState <= idle;
+                    NextState <= idle_desp_darbuses;
                 else
                     NextState <= dar_buses;
                 end if;
+            when idle_desp_darbuses =>
+                NextState <= fetch1;
             when fetch1 =>
                 NextState <= fetch2;
             when fetch2 =>
@@ -189,7 +193,29 @@ Outputs: process (Clk)
                     ALU_OP <= nop;
                     
                     flagZretenido <= '0';
-
+                    flagzretenido2 <= '0';
+                when idle_desp_darbuses =>
+                    if(dma_rq = '0') then
+                                    if(flag_salto = '1') then
+                                        Cuenta_Instruccion <= unsigned(registro_segunda);
+                                    else
+                                        Cuenta_Instruccion <= Cuenta_Instruccion + to_unsigned(1,12);
+                                    end if;                
+                                end if;
+                                
+                                    registro_segunda <= (others => '0');
+                                    
+                                    Databus <= (others => 'Z');
+                                    Rom_Addr <= (others => 'Z'); 
+                                    Ram_Addr <= (others => 'Z');
+                                    Ram_Write <= 'Z';
+                                    Ram_OE <= 'Z';
+                                    DMA_ACK <= '0';
+                                    Send_Comm <= '0';
+                                    ALU_OP <= nop;
+                                    
+                                    flagZretenido <= '0';
+                                    
                 when dar_buses =>
                     Databus <= (others => 'Z');
                     --Rom_Addr <= 
@@ -200,6 +226,10 @@ Outputs: process (Clk)
                     Send_Comm <= '0';
                     ALU_OP <= nop;
                     
+                    if(flagZretenido2 = '0') then
+                        flagZretenido2 <= flagZ;
+                    end if;
+                    
                 when fetch1 =>
                     Databus <= (others => 'Z');
                     Rom_Addr <= std_logic_vector(Cuenta_Instruccion);
@@ -209,9 +239,13 @@ Outputs: process (Clk)
                     DMA_ACK <= '0';
                     Send_Comm <= '0';
                     ALU_OP <= nop;
-                                    
-                    flagZretenido <= flagZ;
-    
+                    
+                    if(flagZretenido2 = '0') then       
+                        flagZretenido <= flagZ;
+                    else
+                        flagZretenido <= '1';
+                    end if;
+                    
                 when fetch2 =>
                     Databus <= (others => 'Z');
                     --Rom_Addr ;
@@ -320,7 +354,8 @@ Outputs: process (Clk)
                                 
                 when DecisionSalto =>
                     Databus <= (others => 'Z');
-    
+                    Ram_Addr <= (others => 'Z');
+                    Ram_OE <= 'Z';
                     if (instruccion = JMP_UNCOND) then
                         flag_salto <= '1';
                     else
@@ -335,7 +370,8 @@ Outputs: process (Clk)
                     
                 when Execute3 =>
                     Databus <= (others => 'Z');
-    
+                    Ram_Addr <= (others => 'Z');
+                    Ram_OE <= 'Z';
                     if(flag_mov_registros = '1') then
                         case instruccion(2 downto 0) is
                             when DST_A => 
@@ -355,9 +391,10 @@ Outputs: process (Clk)
                     case instruccion(5) is
                         when '0' =>
                             case instruccion(4 downto 3) is
-                                when SRC_constant =>
+                                when SRC_CONSTANT =>
                                     databus <= rom_data(7 downto 0);
-                                    
+                                    Ram_Addr <= (others => 'Z');
+                                    Ram_OE <= 'Z';
                                     case instruccion(2 downto 0) is
                                         when DST_ACC =>
                                             alu_op <= op_ldacc;      
@@ -421,7 +458,11 @@ Outputs: process (Clk)
                     end case;
                     
                 when Espera_LSP =>
-                    null;
+                   if(instruccion(4 downto 3) = SRC_INDXD_MEM or instruccion(4 downto 3) = SRC_MEM) then
+                                        Ram_OE <= '0';
+                                    else
+                                        Ram_OE <= 'Z';
+                                    end if;
                     
                 when EscribirEnRam =>
                     Ram_OE <= 'Z';

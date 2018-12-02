@@ -57,7 +57,7 @@ architecture Behavioral of DMA is
     
 begin
 
-Next_process: process (CurrentState, RX_Empty, send_comm, tx_rdy, dma_ack, count_rx, next_clk) 
+Next_process: process (clk, CurrentState, RX_Empty, send_comm, tx_rdy, dma_ack, count_rx, next_clk) 
     begin
         case CurrentState is
             when Idle =>
@@ -115,9 +115,9 @@ Next_process: process (CurrentState, RX_Empty, send_comm, tx_rdy, dma_ack, count
                     NextState <= espabiladr;
                 end if;
             when recibir =>
-                if(count_rx < "11") then
+                if(count_rx < "10") then
                     NextState <= fin_rx;
-                elsif (count_rx = "11") then
+                elsif (count_rx = "10") then
                     nextstate <= the_end;
                 else
                     NextState <= recibir;
@@ -129,11 +129,14 @@ Next_process: process (CurrentState, RX_Empty, send_comm, tx_rdy, dma_ack, count
                     NextState <= fin_rx;
                 end if;
             when the_end =>
-                if (count_rx = "00") then
-                    NextState <= fin_rx;
-                else
-                    NextState <= the_end;
-                end if;
+                Nextstate <= fin_rx;
+--                if (count_rx = "00") then
+--                    NextState <= fin_rx;
+--                else
+--                    NextState <= the_end;
+--                end if;
+            when others => 
+                NextState <= Idle;
         end case;
     end process;
 
@@ -141,6 +144,7 @@ FFs: process (Reset, Clk, NextState, CurrentState)
     begin
         if Reset = '0' then
             CurrentState <= Idle;
+            --NextState <= Idle;
         elsif Clk'event and Clk = '1' then
             CurrentState <= NextState;
         end if;
@@ -148,7 +152,11 @@ FFs: process (Reset, Clk, NextState, CurrentState)
 
 Outputs: process (Clk, currentstate) 
     begin
+        if (Reset = '0') then
+                    Count_rx <= (others => '0');
+      elsif(clk'event and clk='1') then
         case CurrentState is
+            
             when Idle =>
                 OE <= 'Z';
                 Write_en <= 'Z';
@@ -228,6 +236,10 @@ Outputs: process (Clk, currentstate)
                 Valid_D <= '1';
                 TX_Data <= Databus;         
             when Inicio_rx =>
+                if (Count_rx = "11") then
+                            Count_rx <= (others => '0');
+                end if;
+            
                 OE <= 'Z';                  
                 Write_en <= 'Z';            
                 Address <= (others => 'Z'); 
@@ -254,6 +266,7 @@ Outputs: process (Clk, currentstate)
                 Valid_D <= '1';             
                 TX_Data <= (others => 'Z');  
             when recibir =>
+                Count_rx <= Count_rx + to_unsigned(1,2);
                 OE <= 'Z';                  
                 Write_en <= '1';
                 case count_rx is                                  
@@ -297,21 +310,35 @@ Outputs: process (Clk, currentstate)
                                             
                 Valid_D <= '1';             
                 TX_Data <= (others => 'Z'); 
+             when others =>
+                            OE <= 'Z';
+                                            Write_en <= 'Z';
+                                            Address <= (others => 'Z');
+                                            Databus <= (others => 'Z');
+                                            
+                                            DMA_RQ <= '0';
+                                            READY  <= '1';
+                                            
+                                            Data_Read <= '0';
+                            
+                                            Valid_D <= '1';
+                                            TX_Data <= (others => 'Z');
         end case;
+       end if;
     end process;
     
-CounterRecibir : process(clk, Reset, CurrentState) 
-    begin
-        if (Reset = '0') then
-            Count_rx <= (others => '0');
-        elsif (clk'event and clk = '0') then -- estaba en los pulsos de bajada
-            if (Count_rx = "11") then
-                Count_rx <= (others => '0');
-            elsif (CurrentState = recibir) then
-                Count_rx <= Count_rx + to_unsigned(1,2);
-            end if;
-        end if;
-    end process;
+--CounterRecibir : process(clk, Reset, CurrentState) 
+--    begin
+--        if (Reset = '0') then
+--            Count_rx <= (others => '0');
+--        elsif (clk'event and clk = '0') then -- estaba en los pulsos de bajada
+--            if (Count_rx = "11") then
+--                Count_rx <= (others => '0');
+--            elsif (CurrentState = recibir) then
+--                Count_rx <= Count_rx + to_unsigned(1,2);
+--            end if;
+--        end if;
+--    end process;
     
 CounterNextClk : process(clk, Reset, CurrentState) 
         begin
