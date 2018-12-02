@@ -20,6 +20,7 @@ end ROM;
  
 architecture AUTOMATIC of ROM is
 
+constant wfff: std_logic_vector(11 downto 0) :=x"0" &type_3 & ld & src_mem & dst_a;
 constant W0  : std_logic_vector(11 downto 0) :=X"0" & TYPE_3 & LD & SRC_MEM & DST_A;
 constant W1  : std_logic_vector(11 downto 0) := X"003";
 constant W2  : std_logic_vector(11 downto 0) :=X"0" & TYPE_3 & LD & SRC_CONSTANT & DST_B;
@@ -251,6 +252,7 @@ begin  -- AUTOMATIC
  
 with Program_counter select
     Instruction <=
+ wfff when x"fff",
  W0 when X"000",
  W1 when X"001",
  W2 when X"002",

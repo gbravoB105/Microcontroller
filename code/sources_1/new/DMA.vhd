@@ -57,7 +57,7 @@ architecture Behavioral of DMA is
     
 begin
 
-Next_process: process (CurrentState, RX_Empty, send_comm, tx_rdy, dma_ack, count_rx, next_clk) 
+Next_process: process (clk, CurrentState, RX_Empty, send_comm, tx_rdy, dma_ack, count_rx, next_clk) 
     begin
         case CurrentState is
             when Idle =>
@@ -148,6 +148,9 @@ FFs: process (Reset, Clk, NextState, CurrentState)
 
 Outputs: process (Clk, currentstate) 
     begin
+        if (Reset = '0') then
+                    Count_rx <= (others => '0');
+      elsif(clk'event and clk='1') then
         case CurrentState is
             when Idle =>
                 OE <= 'Z';
@@ -228,6 +231,10 @@ Outputs: process (Clk, currentstate)
                 Valid_D <= '1';
                 TX_Data <= Databus;         
             when Inicio_rx =>
+                if (Count_rx = "11") then
+                            Count_rx <= (others => '0');
+                end if;
+            
                 OE <= 'Z';                  
                 Write_en <= 'Z';            
                 Address <= (others => 'Z'); 
@@ -254,6 +261,7 @@ Outputs: process (Clk, currentstate)
                 Valid_D <= '1';             
                 TX_Data <= (others => 'Z');  
             when recibir =>
+                Count_rx <= Count_rx + to_unsigned(1,2);
                 OE <= 'Z';                  
                 Write_en <= '1';
                 case count_rx is                                  
@@ -298,20 +306,21 @@ Outputs: process (Clk, currentstate)
                 Valid_D <= '1';             
                 TX_Data <= (others => 'Z'); 
         end case;
+       end if;
     end process;
     
-CounterRecibir : process(clk, Reset, CurrentState) 
-    begin
-        if (Reset = '0') then
-            Count_rx <= (others => '0');
-        elsif (clk'event and clk = '0') then -- estaba en los pulsos de bajada
-            if (Count_rx = "11") then
-                Count_rx <= (others => '0');
-            elsif (CurrentState = recibir) then
-                Count_rx <= Count_rx + to_unsigned(1,2);
-            end if;
-        end if;
-    end process;
+--CounterRecibir : process(clk, Reset, CurrentState) 
+--    begin
+--        if (Reset = '0') then
+--            Count_rx <= (others => '0');
+--        elsif (clk'event and clk = '0') then -- estaba en los pulsos de bajada
+--            if (Count_rx = "11") then
+--                Count_rx <= (others => '0');
+--            elsif (CurrentState = recibir) then
+--                Count_rx <= Count_rx + to_unsigned(1,2);
+--            end if;
+--        end if;
+--    end process;
     
 CounterNextClk : process(clk, Reset, CurrentState) 
         begin

@@ -21,21 +21,21 @@ ARCHITECTURE behavior OF RAM IS
 
     SIGNAL ram_specific : array8_ram(0 to 63);
     SIGNAL ram_generic : array8_ram(64 to 255);
-    SIGNAL chipset : std_logic;
+--    SIGNAL chipset : std_logic;
   
 BEGIN
 
 -- chipset = 1 para la segunda memoria.
-p_chipset : process (Reset, address)
-    begin
-        if (Reset = '0') then
-            chipset <= '0';
-        elsif (address = ("ZZZZZZZZ")) then -- solo para que chipset no aparezca en forma de X 
-            chipset <= 'Z';
-        else
-            chipset <= address(7) or address(6); -- Address mayor que 00111111 3F 63dec.
-        end if;
-    end process;
+--p_chipset : process (Reset, address)
+--    begin
+--        if (Reset = '0') then
+--            chipset <= '0';
+--        elsif (address = ("ZZZZZZZZ")) then -- solo para que chipset no aparezca en forma de X 
+--            chipset <= 'Z';
+--        else
+--            chipset <= address(7) or address(6); -- Address mayor que 00111111 3F 63dec.
+--        end if;
+--    end process;
 
 p_escritura : process (clk, reset) 
     begin
@@ -49,26 +49,26 @@ p_escritura : process (clk, reset)
             end loop;
         elsif (clk'event and clk = '1') then
             if (write_en = '1') then
-                if (chipset = '0') then
+                --if (chipset = '0') then
                     ram_specific(to_integer(unsigned(address))) <= databus;
-                elsif (chipset = '1') then     
-                    ram_generic(to_integer(unsigned(address))) <= databus;
-                end if;
+--                elsif (chipset = '1') then     
+--                    ram_generic(to_integer(unsigned(address))) <= databus;
+--                end if;
             end if;
         end if;
     end process;
 
-p_lectura : process (clk, reset, address, chipset, oe) -- la memoria tiene que ser síncrona 
+p_lectura : process (clk, reset, address,  oe) --chipset,-- la memoria tiene que ser síncrona 
     begin                                       -- para que Xilinx lo sintetice en los bloques reservados
         if (reset = '0') then
             databus <= (others => 'Z');
         elsif (clk'event and clk = '1') then
             if (oe = '0') then
-                if (chipset = '0') then
+--                if (chipset = '0') then
                     databus <= ram_specific(to_integer(unsigned(address)));
-                elsif (chipset = '1') then
-                    databus <= ram_generic(to_integer(unsigned(address)));
-                end if;
+--                elsif (chipset = '1') then
+--                    databus <= ram_generic(to_integer(unsigned(address)));
+--                end if;
             else
                 databus <= (others => 'Z');
             end if;

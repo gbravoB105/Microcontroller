@@ -51,7 +51,7 @@ end MAIN_CONTROL;
 architecture Behavioral of MAIN_CONTROL is
 
     type State is (Idle, Dar_Buses, Fetch1, Fetch2, Decode, Execute1, Execute2, LecturaSalto, 
-        DecisionSalto, Execute3, LecturaSegundaPalabra, Espera_LSP, EscribirEnRam, Execute4, Stall);
+        DecisionSalto, Execute3, joder, LecturaSegundaPalabra, Espera_LSP, EscribirEnRam, Execute4, Stall);
     
     signal CurrentState, NextState       : State;
     signal type_instruccion              : std_logic_vector (1 downto 0) := "00";
@@ -117,9 +117,13 @@ Next_process: process (clk, currentstate)
             when Execute3 =>
                 if(flag_mov_registros = '1') then
                     NextState <= Idle;
+                elsif(instruccion(5 downto 3) = ('0'&SRC_CONSTANT)) then
+                    NextState <= joder;
                 else
                     NextState <= LecturaSegundaPalabra;
                 end if;
+            when joder =>
+                Nextstate <= Espera_LSP;
             when LecturaSegundaPalabra => -- Tiene que esperar a la ram cuando entre a leer la segunda palabra
                 if instruccion(5) = '0' then
 --                    if (instruccion(4 downto 3) = SRC_MEM) then
@@ -319,6 +323,7 @@ Outputs: process (Clk)
                     ALU_OP <= nop;
                                 
                 when DecisionSalto =>
+                    Ram_OE <= 'Z';
                     Databus <= (others => 'Z');
     
                     if (instruccion = JMP_UNCOND) then
@@ -335,7 +340,8 @@ Outputs: process (Clk)
                     
                 when Execute3 =>
                     Databus <= (others => 'Z');
-    
+                    Ram_OE <= 'Z';
+                    Ram_Addr <= (others => 'Z');
                     if(flag_mov_registros = '1') then
                         case instruccion(2 downto 0) is
                             when DST_A => 
@@ -350,26 +356,46 @@ Outputs: process (Clk)
                     else 
                         ROM_Addr <= std_logic_vector(Cuenta_instruccion);
                     end if;
-                                
+                          
+                          
+                when joder =>
+                     Ram_OE <= 'Z';
+                     Ram_Addr <= (others => 'Z');
+                    databus <= rom_data(7 downto 0);
+                    
+                    case instruccion(2 downto 0) is
+                        when DST_ACC =>
+                            alu_op <= op_ldacc;      
+                        when DST_A =>
+                            alu_op <= op_lda;
+                        when DST_B =>
+                            alu_op <= op_ldb;        
+                        when DST_INDX =>
+                            alu_op <= op_ldid;
+                        when others => 
+                            alu_op <= nop;
+                    end case;               
                 when LecturaSegundaPalabra =>
                     case instruccion(5) is
                         when '0' =>
                             case instruccion(4 downto 3) is
-                                when SRC_constant =>
-                                    databus <= rom_data(7 downto 0);
+--                                when SRC_constant =>
+--                                    Ram_OE <= '1';
+--                                    databus <= rom_data(7 downto 0);
                                     
-                                    case instruccion(2 downto 0) is
-                                        when DST_ACC =>
-                                            alu_op <= op_ldacc;      
-                                        when DST_A =>
-                                            alu_op <= op_lda;
-                                        when DST_B =>
-                                            alu_op <= op_ldb;        
-                                        when DST_INDX =>
-                                            alu_op <= op_ldid;
-                                        when others => 
-                                            alu_op <= nop;
-                                    end case;
+--                                    case instruccion(2 downto 0) is
+--                                        when DST_ACC =>
+--                                            alu_op <= op_ldacc;      
+--                                        when DST_A =>
+--                                            alu_op <= op_lda;
+--                                        when DST_B =>
+--                                            alu_op <= op_ldb;        
+--                                        when DST_INDX =>
+--                                            alu_op <= op_ldid;
+--                                        when others => 
+--                                            alu_op <= nop;
+--                                    end case;
+                                    
                                 when SRC_MEM =>
                                     Databus <= (others => 'Z');
                                     ram_addr <= rom_data(7 downto 0);
@@ -411,17 +437,21 @@ Outputs: process (Clk)
                                     alu_op <= nop;
                             end case;
                         when '1' =>
-                            Ram_OE <= 'Z';
+                            Ram_OE <= '1';
                             Databus <= (others => 'Z');
                             alu_op <= op_oeacc;
                         when others =>
-                            Ram_OE <= 'Z';
+                            Ram_OE <= '1';
                             Databus <= (others => 'Z');
                             alu_op <= nop;
                     end case;
                     
                 when Espera_LSP =>
-                    null;
+                    if(instruccion(4 downto 3) = SRC_INDXD_MEM or instruccion(4 downto 3) = SRC_MEM) then
+                        Ram_OE <= '0';
+                    else
+                        Ram_OE <= 'Z';
+                    end if;
                     
                 when EscribirEnRam =>
                     Ram_OE <= 'Z';
